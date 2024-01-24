@@ -1,8 +1,23 @@
 package opentofu
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+
 	"get.porter.sh/porter/pkg/exec/builder"
+	"github.com/tidwall/gjson"
+	"gopkg.in/yaml.v2"
 )
+
+func (m *Mixin) loadAction(ctx context.Context) (*Action, error) {
+	var action Action
+	err := builder.LoadAction(ctx, m.RuntimeConfig, "", func(contents []byte) (interface{}, error) {
+		err := yaml.Unmarshal(contents, &action)
+		return &action, err
+	})
+	return &action, err
+}
 
 var _ builder.ExecutableAction = Action{}
 var _ builder.BuildableAction = Action{}
@@ -12,15 +27,7 @@ type Action struct {
 	Steps []Step // using UnmarshalYAML so that we don't need a custom type per action
 }
 
-// MarshalYAML converts the action back to a YAML representation
-// install:
-//   opentofu:
-//     ...
-func (a Action) MarshalYAML() (interface{}, error) {
-	return map[string]interface{}{a.Name: a.Steps}, nil
-}
-
-// MakeSteps builds a slice of Step for data to be unmarshaled into.
+// MakeSteps builds a slice of Steps for data to be unmarshaled into.
 func (a Action) MakeSteps() interface{} {
 	return &[]Step{}
 }
@@ -60,86 +67,34 @@ type Step struct {
 	Instruction `yaml:"opentofu"`
 }
 
-// Actions is a set of actions, and the steps, passed from Porter.
-type Actions []Action
+var _ builder.ExecutableStep = Step{}
+var _ builder.HasCustomDashes = Step{}
 
-// UnmarshalYAML takes chunks of a porter.yaml file associated with this mixin
-// and populates it on the current action set.
-// install:
-//   opentofu:
-//     ...
-//   opentofu:
-//     ...
-// upgrade:
-//   opentofu:
-//     ...
-func (a *Actions) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	results, err := builder.UnmarshalAction(unmarshal, Action{})
-	if err != nil {
-		return err
-	}
-
-	for actionName, action := range results {
-		for _, result := range action {
-			s := result.(*[]Step)
-			*a = append(*a, Action{
-				Name:  actionName,
-				Steps: *s,
-			})
-		}
-	}
-	return nil
+func (s Step) GetCommand() string {
+	return "tofu"
 }
 
-var _ builder.HasOrderedArguments = Instruction{}
-var _ builder.ExecutableStep = Instruction{}
-var _ builder.StepWithOutputs = Instruction{}
-
-type Instruction struct {
-	Name        string   `yaml:"name"`
-	Description string   `yaml:"description"`
-	WorkingDir  string   `yaml:"dir,omitempty"`
-	Arguments   []string `yaml:"arguments,omitempty"`
-
-	// Useful when the CLI you are calling wants some arguments to come after flags
-	// Arguments are passed first, then Flags, then SuffixArguments.
-	SuffixArguments []string `yaml:"suffix-arguments,omitempty"`
-
-	Flags          builder.Flags `yaml:"flags,omitempty"`
-	Outputs        []Output      `yaml:"outputs,omitempty"`
-	SuppressOutput bool          `yaml:"suppress-output,omitempty"`
-
-	// Allow the user to ignore some errors
-	// Adds the ignoreError functionality from the exec mixin
-	// https://release-v1.porter.sh/mixins/exec/#ignore-error
-	builder.IgnoreErrorHandler `yaml:"ignoreError,omitempty"`
+func (s Step) GetWorkingDir() string {
+	return "."
 }
 
-func (s Instruction) GetCommand() string {
-	return "opentofu"
-}
-
-func (s Instruction) GetWorkingDir() string {
-	return s.WorkingDir
-}
-
-func (s Instruction) GetArguments() []string {
+func (s Step) GetArguments() []string {
 	return s.Arguments
 }
 
-func (s Instruction) GetSuffixArguments() []string {
-	return s.SuffixArguments
-}
-
-func (s Instruction) GetFlags() builder.Flags {
+func (s Step) GetFlags() builder.Flags {
 	return s.Flags
 }
 
-func (s Instruction) SuppressesOutput() bool {
-	return s.SuppressOutput
+func (s Step) GetDashes() builder.Dashes {
+	// All flags in the tofu cli use a single dash
+	return builder.Dashes{
+		Long:  "-",
+		Short: "-",
+	}
 }
 
-func (s Instruction) GetOutputs() []builder.Output {
+func (s Step) GetOutputs() []builder.Output {
 	// Go doesn't have generics, nothing to see here...
 	outputs := make([]builder.Output, len(s.Outputs))
 	for i := range s.Outputs {
@@ -148,32 +103,54 @@ func (s Instruction) GetOutputs() []builder.Output {
 	return outputs
 }
 
-var _ builder.OutputJsonPath = Output{}
-var _ builder.OutputFile = Output{}
-var _ builder.OutputRegex = Output{}
+// applyVarsToStepFlags converts the tofu vars specified in YAML into a list of -var flags
+// with the variable value set in a format that tofu expects.
+func applyVarsToStepFlags(step *Step) error {
+	if len(step.Vars) == 0 {
+		// return early because otherwise parseVars.ForEach below will print `-var =` even when the result is empty
+		return nil
+	}
+
+	vars, err := json.Marshal(step.Vars)
+	if err != nil {
+		return fmt.Errorf("error marshaling tofu variables to json")
+	}
+
+	parsedVars := gjson.Parse(string(vars))
+	parsedVars.ForEach(func(key, value gjson.Result) bool {
+		// ensure that the flag value is set using a format that tofu expects
+		// primitive data types should print the value directly, e.g. astring, 1, true, 2.4
+		// complex data types should be json, e.g. [1,2,3] or {"color":"blue}
+		step.Flags = append(step.Flags, builder.NewFlag("var", fmt.Sprintf("'%s=%s'", key.String(), value.String())))
+		return true
+	})
+
+	return nil
+}
+
+type Instruction struct {
+	Name            string        `yaml:"name"`
+	Description     string        `yaml:"description"`
+	Arguments       []string      `yaml:"arguments,omitempty"`
+	Flags           builder.Flags `yaml:"flags,omitempty"`
+	Outputs         []Output      `yaml:"outputs,omitempty"`
+	TofuFields `yaml:",inline"`
+}
+
+// TofuFields represent fields specific to tofu
+type TofuFields struct {
+	Vars           map[string]interface{} `yaml:"vars,omitempty"`
+	DisableVarFile bool                   `yaml:"disableVarFile,omitempty"`
+	LogLevel       string                 `yaml:"logLevel,omitempty"`
+	BackendConfig  map[string]interface{} `yaml:"backendConfig,omitempty"`
+}
 
 type Output struct {
 	Name string `yaml:"name"`
-
-	// See https://porter.sh/mixins/exec/#outputs
-	// TODO: If your mixin doesn't support these output types, you can remove these and the interface assertions above, and from #/definitions/outputs in schema.json
-	JsonPath string `yaml:"jsonPath,omitempty"`
-	FilePath string `yaml:"path,omitempty"`
-	Regex    string `yaml:"regex,omitempty"`
+	// Write the output to the specified file
+	DestinationFile string `yaml:"destinationFile,omitempty"`
 }
 
 func (o Output) GetName() string {
 	return o.Name
-}
-
-func (o Output) GetJsonPath() string {
-	return o.JsonPath
-}
-
-func (o Output) GetFilePath() string {
-	return o.FilePath
-}
-
-func (o Output) GetRegex() string {
-	return o.Regex
 }

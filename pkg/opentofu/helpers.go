@@ -1,10 +1,10 @@
 package opentofu
 
 import (
+	"sort"
 	"testing"
 
 	"get.porter.sh/porter/pkg/portercontext"
-	"get.porter.sh/porter/pkg/runtime"
 )
 
 type TestMixin struct {
@@ -12,15 +12,23 @@ type TestMixin struct {
 	TestContext *portercontext.TestContext
 }
 
-// NewTestMixin initializes a mixin test client, with the output buffered, and an in-memory file system.
+// NewTestMixin initializes a opentofu mixin, with the output buffered, and an in-memory file system.
 func NewTestMixin(t *testing.T) *TestMixin {
-	c := runtime.NewTestRuntimeConfig(t)
-	m := &TestMixin{
-		Mixin: &Mixin{
-			RuntimeConfig: c.RuntimeConfig,
-		},
-		TestContext: c.TestContext,
+	c := portercontext.NewTestContext(t)
+	m := New()
+	m.Context = c.Context
+	return &TestMixin{
+		Mixin:       m,
+		TestContext: c,
 	}
+}
 
-	return m
+func sortKeys(m map[string]interface{}) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	return keys
 }

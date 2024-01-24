@@ -2,44 +2,60 @@ package opentofu
 
 import (
 	"context"
+	"text/template"
 
 	"get.porter.sh/porter/pkg/exec/builder"
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
+	"github.com/pkg/errors"
 )
+
+const dockerfileLines = `
+ENV PORTER_OPENTOFU_MIXIN_USER_AGENT_OPT_OUT="{{ .UserAgentOptOut}}"
+ENV AZURE_HTTP_USER_AGENT="{{ .AzureUserAgent }}"
+RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+ apt-get update && apt-get install -y wget && \
+ wget --secure-protocol=TLSv1_2 --https-only https://get.opentofu.org/install-opentofu.sh -O install-opentofu.sh --progress=dot:giga && \
+ chmod +x install-opentofu.sh && \
+ ./install-opentofu.sh --install-method standalone && \
+ rm install-opentofu.sh && \
+COPY {{.WorkingDir}}/{{.InitFile}} $BUNDLE_DIR/{{.WorkingDir}}/
+RUN cd $BUNDLE_DIR/{{.WorkingDir}} && \
+ tofu init -backend=false && \
+ rm -fr .tofu/providers && \
+ tofu providers mirror /usr/local/share/tofu/plugins
+`
 
 // BuildInput represents stdin passed to the mixin for the build command.
 type BuildInput struct {
-	Config MixinConfig
+	Config *MixinConfig
 }
 
-// MixinConfig represents configuration that can be set on the opentofu mixin in porter.yaml
+// MixinConfig represents configuration that can be set on the tofu mixin in porter.yaml
 // mixins:
-// - opentofu:
-//	  clientVersion: "v0.0.0"
-
+//   - opentofu:
+//     version: v0.0.0
 type MixinConfig struct {
+	// ClientVersion is the version of the tofu CLI to install
 	ClientVersion string `yaml:"clientVersion,omitempty"`
+
+	// UserAgentOptOut allows a bundle author to opt out from adding porter and the mixin's version to the tofu user agent string.
+	UserAgentOptOut bool `yaml:"userAgentOptOut,omitempty"`
+
+	InitFile   string `yaml:"initFile,omitempty"`
+	WorkingDir string `yaml:"workingDir,omitempty"`
 }
 
-// This is an example. Replace the following with whatever steps are needed to
-// install required components into
-// const dockerfileLines = `RUN apt-get update && \
-// apt-get install gnupg apt-transport-https lsb-release software-properties-common -y && \
-// echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ stretch main" | \
-//    tee /etc/apt/sources.list.d/azure-cli.list && \
-// apt-key --keyring /etc/apt/trusted.gpg.d/Microsoft.gpg adv \
-// 	--keyserver packages.microsoft.com \
-// 	--recv-keys BC528686B50D79E339D3721CEB3E94ADBE1229CF && \
-// apt-get update && apt-get install azure-cli
-// `
+type buildConfig struct {
+	MixinConfig
 
-// Build will generate the necessary Dockerfile lines
-// for an invocation image using this mixin
+	// AzureUserAgent is the contents of the azure user agent environment variable
+	AzureUserAgent string
+}
+
 func (m *Mixin) Build(ctx context.Context) error {
-
-	// Create new Builder.
-	var input BuildInput
-
+	input := BuildInput{
+		Config: &m.config, // Apply config directly to the mixin
+	}
 	err := builder.LoadAction(ctx, m.RuntimeConfig, "", func(contents []byte) (interface{}, error) {
 		err := yaml.Unmarshal(contents, &input)
 		return &input, err
@@ -48,16 +64,15 @@ func (m *Mixin) Build(ctx context.Context) error {
 		return err
 	}
 
-	suppliedClientVersion := input.Config.ClientVersion
-
-	if suppliedClientVersion != "" {
-		m.ClientVersion = suppliedClientVersion
+	tmpl, err := template.New("Dockerfile").Parse(dockerfileLines)
+	if err != nil {
+		return errors.Wrapf(err, "error parsing opentofu mixin Dockerfile template")
 	}
 
-	//fmt.Fprintf(m.Out, dockerfileLines)
+	cfg := buildConfig{MixinConfig: *input.Config}
+	if !input.Config.UserAgentOptOut {
+		cfg.AzureUserAgent = m.userAgent
+	}
 
-	// Example of pulling and defining a client version for your mixin
-	// fmt.Fprintf(m.Out, "\nRUN curl https://get.helm.sh/helm-%s-linux-amd64.tar.gz --output helm3.tar.gz", m.ClientVersion)
-
-	return nil
+	return tmpl.Execute(m.Out, cfg)
 }

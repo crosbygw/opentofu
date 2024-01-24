@@ -4,17 +4,19 @@ import (
 	"get.porter.sh/porter/pkg/mixin"
 	"get.porter.sh/porter/pkg/pkgmgmt"
 	"get.porter.sh/porter/pkg/porter/version"
-	"github.com/getporter/opentofu/pkg"
 )
 
 func (m *Mixin) PrintVersion(opts version.Options) error {
-	metadata := mixin.Metadata{
+	return version.PrintVersion(m.Context, opts, m.Version())
+}
+
+func (m *Mixin) Version() mixin.Metadata {
+	return mixin.Metadata{
 		Name: "opentofu",
 		VersionInfo: pkgmgmt.VersionInfo{
 			Version: pkg.Version,
 			Commit:  pkg.Commit,
-			Author:  "Greg Crosby",
+			Author:  "Porter Authors",
 		},
 	}
-	return version.PrintVersion(m.Context, opts, metadata)
 }

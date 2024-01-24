@@ -40,6 +40,7 @@ func TestUnit() {
 // Test runs all types of tests
 func Test() {
 	magefile.Test()
+	Build()
 }
 
 // Publish the mixin to GitHub
