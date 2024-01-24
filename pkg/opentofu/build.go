@@ -1,4 +1,4 @@
-package skeletor
+package opentofu
 
 import (
 	"context"
@@ -12,9 +12,9 @@ type BuildInput struct {
 	Config MixinConfig
 }
 
-// MixinConfig represents configuration that can be set on the skeletor mixin in porter.yaml
+// MixinConfig represents configuration that can be set on the opentofu mixin in porter.yaml
 // mixins:
-// - skeletor:
+// - opentofu:
 //	  clientVersion: "v0.0.0"
 
 type MixinConfig struct {

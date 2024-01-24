@@ -1,5 +1,5 @@
 install:
-  - skeletor:
+  - opentofu:
       description: "Invalid Input Test Case"
       args:
       - yarrrr

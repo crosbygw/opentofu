@@ -1,5 +1,5 @@
 install:
-  - skeletor:
+  - opentofu:
       description: "Summon Minion"
       arguments:
       - "man-e-faces"
