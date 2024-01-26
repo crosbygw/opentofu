@@ -14,10 +14,10 @@ ENV PORTER_OPENTOFU_MIXIN_USER_AGENT_OPT_OUT="{{ .UserAgentOptOut}}"
 ENV AZURE_HTTP_USER_AGENT="{{ .AzureUserAgent }}"
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
  apt-get update && apt-get install -y wget && \
- wget --secure-protocol=TLSv1_2 --https-only https://get.opentofu.org/install-opentofu.sh -O install-opentofu.sh --progress=dot:giga && \
+ wget --secure-protocol=TLSv1_2 --https-only https://get.opentofu.org/install-opentofu.sh -O install-opentofu.sh && \
  chmod +x install-opentofu.sh && \
- ./install-opentofu.sh --install-method standalone && \
- rm install-opentofu.sh && \
+ ./install-opentofu.sh --install-method deb && \
+ rm install-opentofu.sh
 COPY {{.WorkingDir}}/{{.InitFile}} $BUNDLE_DIR/{{.WorkingDir}}/
 RUN cd $BUNDLE_DIR/{{.WorkingDir}} && \
  tofu init -backend=false && \
