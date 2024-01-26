@@ -3,19 +3,21 @@
 package main
 
 import (
-	"os"
-
 	"get.porter.sh/magefiles/mixins"
-	"get.porter.sh/magefiles/releases"
+	"get.porter.sh/magefiles/porter"
+	"github.com/carolynvs/magex/shx"
 )
 
 const (
 	mixinName    = "opentofu"
-	mixinPackage = "github.com/getporter/opentofu"
+	mixinPackage = "github.com/crosbygw/opentofu"
 	mixinBin     = "bin/mixins/" + mixinName
 )
 
-var magefile = mixins.NewMagefile(mixinPackage, mixinName, mixinBin)
+var (
+	magefile = mixins.NewMagefile(mixinPackage, mixinName, mixinBin)
+	must     = shx.CommandBuilder{StopOnError: true}
+)
 
 // ConfigureAgent sets up the CI server with mage and GO
 func ConfigureAgent() {
@@ -41,27 +43,16 @@ func TestUnit() {
 func Test() {
 	magefile.Test()
 	Build()
+	TestIntegration()
 }
 
 // Publish the mixin to GitHub
 func Publish() {
-	// You can test out publishing locally by overriding PORTER_RELEASE_REPOSITORY and PORTER_PACKAGES_REMOTE
-	if _, overridden := os.LookupEnv(releases.ReleaseRepository); !overridden {
-		os.Setenv(releases.ReleaseRepository, "github.com/Greg Crosby/YOURREPO")
-	}
-	magefile.PublishBinaries()
-
-	// TODO: uncomment out the lines below to publish a mixin feed
-	// Set PORTER_PACKAGES_REMOTE to a repository that will contain your mixin feed, similar to github.com/getporter/packages
-	//if _, overridden := os.LookupEnv(releases.PackagesRemote); !overridden {
-	//	os.Setenv("PORTER_PACKAGES_REMOTE", "git@github.com:Greg Crosby/YOUR_PACKAGES_REPOSITORY")
-	//}
-	//magefile.PublishMixinFeed()
+	magefile.Publish()
 }
 
-// TestPublish publishes the project to the specified GitHub username.
-// If your mixin is official hosted in a repository under your username, you will need to manually
-// override PORTER_RELEASE_REPOSITORY and PORTER_PACKAGES_REMOTE to test out publishing safely.
+// TestPublish tries out publish locally, with your github forks
+// Assumes that you forked and kept the repository name unchanged.
 func TestPublish(username string) {
 	magefile.TestPublish(username)
 }
@@ -74,4 +65,15 @@ func Install() {
 // Clean removes generated build files
 func Clean() {
 	magefile.Clean()
+}
+
+// Install porter locally
+func EnsureLocalPorter() {
+	porter.UseBinForPorterHome()
+	porter.EnsurePorter()
+}
+
+func TestIntegration() {
+	EnsureLocalPorter()
+	must.Command("./scripts/test/test-cli.sh").RunV()
 }

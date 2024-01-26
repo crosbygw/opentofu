@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/getporter/opentofu/pkg/opentofu"
+	"github.com/crosbygw/opentofu/pkg/opentofu"
 	"github.com/spf13/cobra"
 )
 

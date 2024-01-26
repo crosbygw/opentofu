@@ -1,4 +1,4 @@
-module github.com/getporter/opentofu
+module github.com/crosbygw/opentofu
 
 go 1.19
 
@@ -11,6 +11,7 @@ replace github.com/spf13/viper => github.com/getporter/viper v1.7.1-porter.2.0.2
 require (
 	get.porter.sh/magefiles v0.5.1
 	get.porter.sh/porter v1.0.9
+	github.com/carolynvs/magex v0.9.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/pkg/errors v0.9.1
@@ -31,7 +32,6 @@ require (
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/carolynvs/aferox v0.3.0 // indirect
-	github.com/carolynvs/magex v0.9.0 // indirect
 	github.com/cbroglie/mustache v1.4.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect

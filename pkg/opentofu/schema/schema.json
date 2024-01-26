@@ -1,20 +1,49 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
+    "declaration": {
+      "oneOf": [
+        {
+          "description": "Declare the opentofu mixin without configuration",
+          "type": "string",
+          "enum": ["opentofu"]
+        },
+        {"$ref": "#/definitions/config"}
+      ]
+    },
+    "config": {
+      "description": "Declare the opentofu mixin with additional configuration",
+      "type": "object",
+      "properties": {
+        "opentofu": {
+          "description": "opentofu mixin configuration",
+          "type": "object",
+          "properties": {
+            "clientVersion": {
+              "description": "Version of opentofu to install in the bundle",
+              "type": "string"
+            },
+            "initFile": {
+              "description": "Relative path from the workingDir to a file defining all providers, used when running opentofu init.",
+              "type": "string"
+            },
+            "workingDir": {
+              "description": "Relative path to your opentofu files, defaults to 'opentofu'",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false,
+      "required": ["opentofu"]
+    },
     "installStep": {
       "type": "object",
       "properties": {
-        "opentofu": {"$ref": "#/definitions/opentofu"}
-      },
-      "required": [
-        "opentofu"
-      ],
-      "additionalProperties": false
-    },
-    "upgradeStep": {
-      "type": "object",
-      "properties": {
-        "opentofu": {"$ref": "#/definitions/opentofu"}
+        "opentofu": {
+          "$ref": "#/definitions/opentofu"
+        }
       },
       "required": [
         "opentofu"
@@ -24,7 +53,103 @@
     "invokeStep": {
       "type": "object",
       "properties": {
-        "opentofu": {"$ref": "#/definitions/opentofu"}
+        "opentofu": {
+          "$ref": "#/definitions/opentofu"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "opentofu"
+      ]
+    },
+    "opentofu": {
+      "type": "object",
+      "properties": {
+        "arguments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "backendConfig": {
+          "type": "object"
+        },
+        "description": {
+          "$ref": "#/definitions/stepDescription"
+        },
+        "flags": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "null",
+              "boolean",
+              "number",
+              "string"
+            ]
+          }
+        },
+        "logLevel": {
+          "type": "string"
+        },
+        "outputs": {
+          "$ref": "#/definitions/outputs"
+        },
+        "vars": {
+          "type": "object"
+        },
+        "disableVarFile": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "description"
+      ]
+    },
+    "upgradeStep": {
+      "type": "object",
+      "properties": {
+        "opentofu": {
+          "type": "object",
+          "properties": {
+            "arguments": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "backendConfig": {
+              "type": "object"
+            },
+            "description": {
+              "$ref": "#/definitions/stepDescription"
+            },
+            "flags": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "null",
+                  "boolean",
+                  "number",
+                  "string"
+                ]
+              }
+            },
+            "logLevel": {
+              "type": "string"
+            },
+            "outputs": {
+              "$ref": "#/definitions/outputs"
+            },
+            "vars": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "description"
+          ]
+        }
       },
       "required": [
         "opentofu"
@@ -34,7 +159,30 @@
     "uninstallStep": {
       "type": "object",
       "properties": {
-        "opentofu": {"$ref": "#/definitions/opentofu"}
+        "opentofu": {
+          "type": "object",
+          "properties": {
+            "backendConfig": {
+              "type": "object"
+            },
+            "description": {
+              "$ref": "#/definitions/stepDescription"
+            },
+            "logLevel": {
+              "type": "string"
+            },
+            "outputs": {
+              "$ref": "#/definitions/outputs"
+            },
+            "vars": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "description"
+          ]
+        }
       },
       "required": [
         "opentofu"
@@ -52,51 +200,13 @@
         "properties": {
           "name": {
             "type": "string"
-          },
-          "jsonPath": {
-            "type": "string"
-          },
-          "regex": {
-            "type": "string"
-          },
-          "path": {
-            "type": "string"
           }
         },
         "additionalProperties": false,
         "required": [
           "name"
-        ],
-        "oneOf": [
-          { "required": [ "jsonPath" ] },
-          { "required": [ "regex" ] },
-          { "required": [ "path" ] }
         ]
       }
-    },
-    "opentofu": {
-      "type": "object",
-      "properties": {
-        "description": {
-          "$ref": "#/definitions/stepDescription"
-        },
-        "arguments": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "flags": {
-          "type": "object",
-          "additionalProperties": {
-            "type": ["null","boolean","number","string"]
-          }
-        },
-        "outputs": {
-          "$ref": "#/definitions/outputs"
-        }
-      },
-      "additionalProperties": false
     }
   },
   "type": "object",
@@ -118,15 +228,16 @@
       "items": {
         "$ref": "#/definitions/uninstallStep"
       }
-    }
-  },
-  "patternProperties": {
-    ".*": {
+    },
+     "mixins": {
       "type": "array",
-      "items": {
-        "$ref": "#/definitions/invokeStep"
-      }
+      "items": { "$ref": "#/definitions/declaration" }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": {
+    "type": "array",
+    "items": {
+      "$ref": "#/definitions/invokeStep"
+    }
+  }
 }

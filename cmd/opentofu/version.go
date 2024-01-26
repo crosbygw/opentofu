@@ -2,7 +2,7 @@ package main
 
 import (
 	"get.porter.sh/porter/pkg/porter/version"
-	"github.com/getporter/opentofu/pkg/opentofu"
+	"github.com/crosbygw/opentofu/pkg/opentofu"
 	"github.com/spf13/cobra"
 )
 

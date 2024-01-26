@@ -1,6 +1,7 @@
 package opentofu
 
 import (
+	"github.com/crosbygw/opentofu/pkg"
 	"get.porter.sh/porter/pkg/mixin"
 	"get.porter.sh/porter/pkg/pkgmgmt"
 	"get.porter.sh/porter/pkg/porter/version"
@@ -16,7 +17,7 @@ func (m *Mixin) Version() mixin.Metadata {
 		VersionInfo: pkgmgmt.VersionInfo{
 			Version: pkg.Version,
 			Commit:  pkg.Commit,
-			Author:  "Porter Authors",
+			Author:  "Gregory Crosby",
 		},
 	}
 }
