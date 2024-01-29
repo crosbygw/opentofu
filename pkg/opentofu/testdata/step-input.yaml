@@ -1,10 +1,13 @@
-install:
-  - opentofu:
-      description: "Summon Minion"
-      arguments:
-      - "man-e-faces"
-      flags:
-        species: "human"
-      outputs:
-        - name: "VICTORY"
-          jsonPath: "$Id"
+custom:
+- opentofu:
+    description: "Custom Action"
+    arguments:
+      - "custom"
+    flags:
+      logLevel: TRACE
+      backendConfig:
+        - "key=my.tfstate"
+      vars:
+        - "myvar=foo"
+    outputs:
+      - name: myoutput

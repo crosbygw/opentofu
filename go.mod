@@ -11,12 +11,15 @@ replace github.com/spf13/viper => github.com/getporter/viper v1.7.1-porter.2.0.2
 require (
 	get.porter.sh/magefiles v0.5.1
 	get.porter.sh/porter v1.0.9
+	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/carolynvs/magex v0.9.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.6.1
+	github.com/stretchr/testify v1.8.1
 	github.com/tidwall/gjson v1.17.0
+	github.com/xeipuuv/gojsonschema v1.2.0
 	go.opentelemetry.io/otel v1.13.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -26,7 +29,6 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
 	github.com/PaesslerAG/gval v1.0.0 // indirect
-	github.com/PaesslerAG/jsonpath v0.1.1 // indirect
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
 	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
@@ -105,7 +107,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.14.0 // indirect
-	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
@@ -113,7 +114,6 @@ require (
 	github.com/vbatts/tar-split v0.11.2 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
-	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.13.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.13.0 // indirect

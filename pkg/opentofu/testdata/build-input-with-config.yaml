@@ -1,0 +1,6 @@
+config:
+    clientVersion: 1.6.0
+    userAgentOptOut: true
+    install:
+        - opentofu:
+            description: "noop"

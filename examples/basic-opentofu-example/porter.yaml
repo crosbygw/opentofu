@@ -1,0 +1,165 @@
+schemaVersion: 1.0.0
+name: basic-opentofu-example
+version: 0.3.0
+registry: ghcr.io/getporter
+
+dockerfile: opentofu/template.Dockerfile
+
+parameters:
+  - name: file_contents
+    type: string
+    applyTo:
+      - install
+      - upgrade
+    default: "foo!"
+  - name: map_var
+    type: object
+    applyTo:
+      - install
+      - upgrade
+    default: { "foo": "bar" }
+  - name: array_var
+    type: array
+    applyTo:
+      - install
+      - upgrade
+    default:
+      [
+        "mylist",
+        "https://ml.azure.com/?wsid=/subscriptions/zzzz/resourceGroups/some-rsg/providers/Microsoft.MachineLearningServices/workspaces/myworkspace&tid=zzzzz",
+      ]
+  - name: boolean_var
+    type: boolean
+    applyTo:
+      - install
+      - upgrade
+    default: true
+  - name: number_var
+    type: number
+    applyTo:
+      - install
+      - upgrade
+    default: 1
+  - name: json_encoded_html_string_var
+    type: string
+    applyTo:
+      - install
+      - upgrade
+    default: "testing?connection&string=<>"
+  - name: complex_object_var
+    type: object
+    applyTo:
+      - install
+      - upgrade
+    default:
+      {
+        "nested_object":
+          { "internal_value": "https://my.connection.com?test&test=$hello" },
+        "top_value": "https://my.service?test=$id<>",
+      }
+
+state:
+  - name: tfstate
+    path: opentofu/terraform.tfstate
+  - name: tfvars
+    path: opentofu/terraform.tfvars.json
+
+mixins:
+  - opentofu:
+      clientVersion: 0.2.2
+
+install:
+  - opentofu:
+      description: "Install OpenTofu assets"
+      vars:
+        file_contents: ${bundle.parameters.file_contents}
+        map_var: ${bundle.parameters.map_var}
+        array_var: ${bundle.parameters.array_var}
+        boolean_var: ${bundle.parameters.boolean_var}
+        number_var: ${bundle.parameters.number_var}
+        json_encoded_html_string_var: ${bundle.parameters.json_encoded_html_string_var}
+        complex_object_var: ${bundle.parameters.complex_object_var}
+      outputs:
+        - name: file_contents
+        - name: map_var
+        - name: array_var
+        - name: boolean_var
+        - name: number_var
+        - name: json_encoded_html_string_var
+        - name: complex_object_var
+
+upgrade:
+  - opentofu:
+      description: "Upgrade OpenTofu assets"
+      vars:
+        file_contents: ${bundle.parameters.file_contents}
+        map_var: ${bundle.parameters.map_var}
+        array_var: ${bundle.parameters.array_var}
+        boolean_var: ${bundle.parameters.boolean_var}
+        number_var: ${bundle.parameters.number_var}
+        json_encoded_html_string_var: ${bundle.parameters.json_encoded_html_string_var}
+        complex_object_var: ${bundle.parameters.complex_object_var}
+      outputs:
+        - name: file_contents
+        - name: map_var
+        - name: array_var
+        - name: boolean_var
+        - name: number_var
+        - name: json_encoded_html_string_var
+        - name: complex_object_var
+
+show:
+  - opentofu:
+      description: "Invoke 'OpenTofu show'"
+
+plan:
+  - opentofu:
+      description: "Invoke 'opentofu plan'"
+# Note: this can't be 'version:' as this would conflict with top-level field
+# Hence the need for the 'arguments:' override
+printVersion:
+  - opentofu:
+      description: "Invoke 'opentofu version'"
+      arguments:
+        - "version"
+
+uninstall:
+  - opentofu:
+      description: "Uninstall opentofu assets"
+
+outputs:
+  - name: file_contents
+    type: string
+    applyTo:
+      - install
+      - upgrade
+  - name: map_var
+    type: object
+    applyTo:
+      - install
+      - upgrade
+  - name: array_var
+    type: array
+    applyTo:
+      - install
+      - upgrade
+  - name: boolean_var
+    type: boolean
+    applyTo:
+      - install
+      - upgrade
+  - name: number_var
+    type: number
+    applyTo:
+      - install
+      - upgrade
+  - name: json_encoded_html_string_var
+    type: string
+    applyTo:
+      - install
+      - upgrade
+  - name: complex_object_var
+    type: object
+    applyTo:
+      - install
+      - upgrade

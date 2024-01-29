@@ -1,0 +1,4 @@
+uninstall:
+- opentofu:
+    description: "Invalid Uninstall"
+    input: true
