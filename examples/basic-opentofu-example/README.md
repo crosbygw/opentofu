@@ -1,4 +1,4 @@
-# Basic Terraform Example Bundle
+# Basic OpenTofu Example Bundle
 
 This example demonstrates how to define and use variables and outputs of different data types in a bundle.
 

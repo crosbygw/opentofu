@@ -14,4 +14,3 @@ FROM --platform=linux/amd64 debian:stable-20230703-slim
 RUN apt-get update \
     && apt-get install --no-install-recommends -y bash curl jq sshpass
 COPY --link .cnab /cnab
-# COPY terraform/components/terraform-provider-f5os /usr/local/share/terraform/plugins/terraform.local/local/f5os/1.3.2/linux_amd64/terraform-provider-f5os

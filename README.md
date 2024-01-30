@@ -1,111 +1,273 @@
-# A Porter Mixin Skeleton
+# OpenTofu Mixin for Porter
 
-[![Build Status](https://dev.azure.com/getporter/porter/_apis/build/status/skeletor?branchName=main)](https://dev.azure.com/getporter/porter/_build/latest?definitionId=13&branchName=main)
+This is a OpenTofu mixin for [Porter](https://porter.sh).
 
-This repository contains the skeleton structure of a Porter Mixin. You can clone
-this repository and use it as a starting point to build new mixins. The
-structure of this project matches closely with existing Porter [Mixins](https://porter.sh/mixins).
+## Install via Porter
 
-1. Create a new repository in GitHub [using this repository as a
-   template](https://help.github.com/en/articles/creating-a-repository-from-a-template).
-1. Go 1.17 or higher is required. You can choose to clone into the GOPATH or not according to preference.
-1. Rename the `cmd/skeletor` and `pkg/skeletor` directories to `cmd/YOURMIXIN` and
-   `pkg/YOURMIXIN`.
-1. Find any remaining `skeletor` text in the repository and replace it with `YOURMIXIN`.
-1. In `pkg/YOURMIXIN/version.go` replace `YOURNAME` with the name you would like displayed as the mixin
-   author. This value is displayed as the author of your mixin when `porter mixins list` is run.
-1. Replace the `YOURNAME` instances in `pkg/YOURMIXIN/version_test.go` with the name used above.
-1. Run `mage build test` to try out all the make targets and
-   verify that everything executes without failing. You may need to fix a test string or two.
-1. Run `mage install` to install your mixin into the Porter home directory. If
-   you don't already have Porter installed, [install](https://porter.sh/install) it first.
-1. Now your mixin is installed, you are ready start customizing and iterating on
-   your mixin!
+This will install the latest mixin release via the Porter CLI.
 
-## Customize your mixin
+```
+porter mixin install opentofu --url https://github.com/crosbygw/opentofu/releases/download
+```
 
-This mixin is ready to wrap an existing command-line tool. The shortest path
-would be to edit `build.go` to add the instructions to download the tool
-and you are all set. It will look and feel like the [gcloud](https://porter.sh/mixins/gcloud)
-or [aws](https://porter.sh/mixins/aws) mixins, both of which are built on top of the exec mixin.
+## Build from source
 
-Edit the `Build` function in `pkg/skeletor/build.go`.
-Here you can add any Dockerfile lines that you require to download and install
-additional tools, configuration files, etc necessary for your mixin. The Build
-function should write the Dockerfile lines to `m.Out` which is a pipe from the
-mixin back to porter.
-You will also find the basic logic supporting mixin configuration.  Support for `clientVersion` is ready to go, which enables users to specify the version of the underlying tool/utility provided by the mixin, if applicable.
+Following commands build the OpenTofu mixin.
+```bash
+git clone https://github.com/crosbygw/opentofu.git
+cd opentofu
 
-Search for `TODO` in the code and follow the instructions to customize the mixin.
+go run mage.go EnsureLocalPorter
+mage build
+```
 
-Here is an example from the aws mixin, where it downloads the latest version of
-of the aws binary and installs it:
+Then, to install the resulting mixin into PORTER_HOME, execute
+`mage install`
 
-https://github.com/getporter/aws-mixin/blob/001c19bfe06d248143353a55f07a42c913579481/pkg/aws/build.go#L7
+## Mixin Configuration
 
-This is enough to have a working mixin. Run `mage build install` and then test
-it out with a bundle.
+```yaml
+mixins:
+- opentofu:
+    clientVersion: 1.0.3
+    workingDir: myinfra
+    initFile: providers.tf
+```
 
-That will get you started but make sure to read the mixin developer
-documentation for how to create a full featured mixin:
+### clientVersion
+The OpenTofu client version can be specified via the `clientVersion` configuration when declaring this mixin. **TODO**
 
-* [Mixin Architecture](https://porter.sh/mixin-dev-guide/architecture/)
-* [Mixin Commands](https://porter.sh/mixin-dev-guide/commands/)
-* [Distributing Mixins](https://porter.sh/mixin-dev-guide/distribution/)
+### workingDir
+The `workingDir` configuration setting is the relative path to your OpenTofu files. Defaults to "opentofu".
 
-Once ready for primetime, don't forget to revisit this `README.md` and update/replace it with details on your mixin.
+### initFile
+OpenTofu/Terraform providers are installed into the bundle during porter build. 
+We recommend that you put your provider declarations into a single file, e.g. "opentofu/providers.tf".
+Then use `initFile` to specify the relative path to this file within workingDir.
+This will dramatically improve Docker image layer caching and performance when building, publishing and installing the bundle.
+> Note: this approach isn't suitable when using OpenTofu/Terraform modules as those need to be "initilized" as well but aren't specified in the `initFile`. You shouldn't specify an `initFile` in this situation.
 
-## Project Structure
+### User Agent Opt Out
 
-In the `cmd/skeletor` directory, you will find a cli built using [spf13/cobra](https://github.com/spf13/cobra). The CLI contains a go file for each basic capability a Mixin should implement:
+When you declare the mixin, you can disable the mixin from customizing the azure user agent string
 
-* build
-* schema
-* version
-* install
-* upgrade
-* invoke
-* uninstall
+```yaml
+mixins:
+- opentofu:
+    userAgentOptOut: true
+```
 
-Each of these command implementations have a corresponding Mixin implementation in the `pkg/skeletor` directory. Each of the commands above is wired into an empty implementation in `pkg/skeletor` that needs to be completed. In order to build a new Mixin, you need to complete these implementations with the relevant technology. For example, to build a [Cloud Formation](https://aws.amazon.com/cloudformation/) mixin, you might implement the methods in `pkg/skeletor` using the [AWS Go SDK](https://docs.aws.amazon.com/sdk-for-go/api/service/cloudformation/).
+You can add your own custom strings to the user agent string by editing your [template Dockerfile] and setting the AZURE_HTTP_USER_AGENT environment variable.
 
-## Provided capabilities
+[template Dockerfile]: https://getporter.org/bundle/custom-dockerfile/
 
-This skeleton mixin project brings some free capabilities:
+## Opentofu/Terraform state
 
-### File System Access and Context
+### Let Porter do the heavy lifting
 
-Porter provides the [portercontext](https://porter.sh/src/pkg/portercontext) package that has helpful mechanisms for accessing the File System using [spf13/afero](https://github.com/spf13/afero). This makes it easy to provide mock File System implementations during testing. The portercontext package also provides a mechanism to encapsulate stdin, stdout and stderr so that they can easily be passed from `cmd/skeletor` code to implementing `pkg/skeletor` code.
+The simplest way to use this mixin with Porter is to let Porter track the Terraform [state](https://www.terraform.io/docs/state/index.html) as actions are executed.  This can be done via a parameter of type `file` that has a source of a corresponding output (of the same `file` type).  Each time the bundle is executed, the output will capture the updated state file and inject it into the next action via its parameter correlate.
 
-### Template and Static Asset Handling
 
-The project go:embed for dealing with static files, such as templates or other content that is best modeled outside of a Go file. You can see an example of this in `pkg/skeletor/schema.go`.
+If you are working with the Porter v1 prerelease, use the new state section:
 
-### Basic Schema
+```yaml
+state:
+  - name: tfstate
+    path: opentofu/terraform.tfstate
+  - name: tfvars
+    path: opentofu/terraform.tfvars.json
+```
 
-The project provides an implementation of the `skeletor schema` command that is mostly functional. To fully implement this for your mixin, you simply need to provide a valid JSON schema. For reference, consult `pkg/skeletor/schema/schema.json`.
+The specified path inside the installer (`/cnab/app/opentofu/terraform.tfstate`) should be where Opentofu/Terraform will be looking to read/write its state.  For a full example bundle using this approach, see the [basic-tf-example](examples/basic-tf-example).
 
-### Basic Tests
+### Remote Backends
 
-The project provides some very basic test skeletons that you can use as a starting point for building tests for your mixin.
+Alternatively, state can be managed by a remote backend.  When doing so, each action step needs to supply the remote backend config via `backendConfig`.  In the step examples below, the configuration has key/value pairs according to the [Azurerm](https://www.terraform.io/docs/backends/types/azurerm.html) backend.
 
-### Magefile
 
-The project also includes a [Magefile] that is used to build, test, and publish the mixin.
+## Terraform variables file
 
-### Publish
+By default the mixin will create a default 
+[`terraform.tfvars.json`](https://www.terraform.io/docs/language/values/variables.html#variable-definitions-tfvars-files)
+file from the `vars` block during during the install step.
 
-You must set the `GITHUB_TOKEN` environment variable with your personal access token in order to use the default publish target.
+To use this file, a `tfvars` file parameter and output must be added to persist it for subsequent steps.
 
-Publish uploads cross-compiled binaries of your mixin to a GitHub release.
-You must set the `PORTER_RELEASE_REPOSITORY` environment variable to your GitHub repository name, e.g. github.com/YOURNAME/YOURREPO.
-There is a placeholder in the Publish magefile target where you can set that value.
+This can be disabled by setting `disableVarFile` to `true` during install.
 
-Create a tag, for example `git tag v0.1.0`, and push it to your repository.
-Run `mage XBuildAll Publish` to build your mixin and upload the binaries to the github release for that tag.
-If the commit is not tagged, the release is named "canary".
+Here is an example setup using the tfvar file:
 
-If you want to generate a mixin feed file (atom.xml), edit the Publish magefile target, uncomment out the rest of the function, and set the `PORTER_PACKAGES_REMOTE` environment variable to a repository where the atom.xml file should be committed.
-For example, Porter uses github.com/getporter/packages for publishing our mixin feed.
+```yaml
+parameters:
+  - name: tfvars
+    type: file
+    # This designates the path within the installer to place the parameter value
+    path: /cnab/app/opentofu/terraform.tfvars.json
+    # Here we tell Porter that the value for this parameter should come from the 'tfvars' output
+    source:
+      output: tfvars
+  - name: foo
+    type: string
+    applyTo:
+      - install 
+  - name: baz
+    type: string
+    default: blaz
+    applyTo:
+      - install 
 
-[Magefile]: https://magefile.org
+outputs:
+  - name: tfvars
+    type: file
+    # This designates the path within the installer to read the output from
+    path: /cnab/app/opentofu/terraform.tfvars.json
+    
+install:
+  - opentofu:
+      description: "Install Azure Key Vault"
+      vars:
+        foo: bar
+        baz: biz
+      outputs:
+      - name: vault_uri
+upgrade: # No var block required
+  - opentofu:
+      description: "Install Azure Key Vault"
+      outputs:
+      - name: vault_uri
+uninstall: # No var block required
+  - opentofu:
+      description: "Install Azure Key Vault"
+      outputs:
+      - name: vault_uri
+```
+
+and with var file disabled
+
+```yaml
+parameters:
+  - name: foo
+    type: string
+    applyTo:
+      - install 
+  - name: baz
+    type: string
+    default: blaz
+    applyTo:
+      - install 
+
+install:
+  - opentofu:
+      description: "Install Azure Key Vault"
+      disableVarFile: true
+      vars:
+        foo: bar
+        baz: biz
+      outputs:
+      - name: vault_uri
+uninstall: # Var block required
+  - opentofu:
+      description: "Install Azure Key Vault"
+      vars:
+        foo: bar
+        baz: biz
+```
+
+## Examples
+
+### Install
+
+```yaml
+install:
+  - opentofu:
+      description: "Install Azure Key Vault"
+      backendConfig:
+        key: "mybundle.tfstate"
+        storage_account_name: "mystorageacct"
+        container_name: "mycontainer"
+        access_key: "myaccesskey"
+      outputs:
+      - name: vault_uri
+```
+
+### Upgrade
+
+```yaml
+upgrade:
+  - opentofu:
+      description: "Upgrade Azure Key Vault"
+      backendConfig:
+        key: "mybundle.tfstate"
+        storage_account_name: "mystorageacct"
+        container_name: "mycontainer"
+        access_key: "myaccesskey"
+      outputs:
+      - name: vault_uri
+```
+
+### Invoke
+
+An invoke step is used for any custom action (not one of `install`, `upgrade` or `uninstall`).
+
+By default, the command given to `tofu` will be the step name.  Here it is `show`,
+resulting in `tofu show` with the provided configuration.
+
+```yaml
+show:
+  - opentofu:
+      description: "Invoke 'OpenTofu show'"
+      backendConfig:
+        key: "mybundle.tfstate"
+        storage_account_name: "mystorageacct"
+        container_name: "mycontainer"
+        access_key: "myaccesskey"
+```
+
+Or, if the step name does not match the intended tofu command, the command
+can be supplied via the `arguments:` section, like so:
+
+```yaml
+printVersion:
+  - opentofu:
+      description: "Invoke 'OpenTofu version'"
+      arguments:
+        - version
+```
+
+### Uninstall
+
+```yaml
+uninstall:
+  - opentofu:
+      description: "Uninstall Azure Key Vault"
+      backendConfig:
+        key: "mybundle.tfstate"
+        storage_account_name: "mystorageacct"
+        container_name: "mycontainer"
+        access_key: "myaccesskey"
+```
+
+See further examples in the [Examples](examples) directory
+
+## Step Outputs
+
+As seen above, outputs can be declared for a step.  All that is needed is the name of the output.
+
+For each output listed, `tofu output <output name>` is invoked to fetch the output value
+from the state file for use by Porter. Outputs can be saved to the filesystem so that subsequent
+steps can use the file by specifying the `destinationFile` field. This is particularly useful
+when your OpenTofu/Terraform module creates a Kubernetes cluster. In the example below, the module
+creates a cluster, and then writes the kubeconfig to /root/.kube/config so that the rest of the
+bundle can immediately use the cluster.
+
+```yaml
+install:
+  - opentofu:
+      description: "Create a Kubernetes cluster"
+      outputs:
+      - name: kubeconfig
+        destinationFile: /root/.kube/config
+```
+
+See the Porter [Outputs documentation](https://porter.sh/wiring/#outputs) on how to wire up
+outputs for use in a bundle.
