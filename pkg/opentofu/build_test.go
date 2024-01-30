@@ -19,7 +19,7 @@ func TestMixin_Build(t *testing.T) {
 		expectedUserAgent string
 	}{
 		{name: "build with custom config", inputFile: "testdata/build-input-with-config.yaml", expectedVersion: "wget --secure-protocol=TLSv1_2 --https-only https://get.opentofu.org/install-opentofu.sh -O install-opentofu.sh", expectedUserAgent: "ENV PORTER_OPENTOFU_MIXIN_USER_AGENT_OPT_OUT=\"true\"\nENV AZURE_HTTP_USER_AGENT=\"\""},
-		{name: "build with the default OpenTofu config", expectedVersion: "wget --secure-protocol=TLSv1_2 --https-only https://get.opentofu.org/install-opentofu.sh -O install-opentofu.sh", expectedUserAgent: "ENV PORTER_OPENTOFU_MIXIN_USER_AGENT_OPT_OUT=\"false\"\nENV AZURE_HTTP_USER_AGENT=\"github.com/crosbygw/opentofu/pkg/opentofu"},
+		{name: "build with the default OpenTofu config", expectedVersion: "wget --secure-protocol=TLSv1_2 --https-only https://get.opentofu.org/install-opentofu.sh -O install-opentofu.sh", expectedUserAgent: "ENV PORTER_OPENTOFU_MIXIN_USER_AGENT_OPT_OUT=\"false\"\nENV AZURE_HTTP_USER_AGENT=\"getporter/porter getporter/opentofu/v1.2.3"},
 	}
 
 	for _, tc := range testcases {
