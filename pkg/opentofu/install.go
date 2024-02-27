@@ -9,7 +9,7 @@ import (
 )
 
 // defaultOpentofuVarFilename is the default name for terrafrom tfvars json file
-const defaultOpentofuVarsFilename = "tofu.tfvars.json"
+const defaultOpentofuVarsFilename = "terraform.tfvars.json"
 
 // Install runs a tofu apply
 func (m *Mixin) Install(ctx context.Context) error {
