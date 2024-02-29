@@ -18,7 +18,7 @@ import (
 
 const (
 	// DefaultWorkingDir is the default working directory for Opentofu.
-	DefaultWorkingDir = "opentofu"
+	DefaultWorkingDir = "terraform"
 
 	// DefaultClientVersion is the default version of the opentofu cli.
 	DefaultClientVersion = "1.2.9"

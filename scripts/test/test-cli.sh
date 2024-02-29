@@ -27,7 +27,7 @@ function verify-output() {
 
 
 # Copy opentofu assets
-cp -r ${REPO_DIR}/examples/basic-opentofu-example/opentofu .
+cp -r ${REPO_DIR}/examples/basic-opentofu-example/terraform .
 
 # Copy in the opentofu porter manifest
 cp ${REPO_DIR}/examples/basic-opentofu-example/porter.yaml .

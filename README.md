@@ -38,10 +38,10 @@ mixins:
 The OpenTofu client version can be specified via the `clientVersion` configuration when declaring this mixin. **TODO**
 
 ### workingDir
-The `workingDir` configuration setting is the relative path to your OpenTofu files. Defaults to "opentofu".
+The `workingDir` configuration setting is the relative path to your OpenTofu files. Defaults to "terraform".
 
 ### initFile
-OpenTofu/Terraform providers are installed into the bundle during porter build. 
+Tofu/Terraform providers are installed into the bundle during porter build. 
 We recommend that you put your provider declarations into a single file, e.g. "opentofu/providers.tf".
 Then use `initFile` to specify the relative path to this file within workingDir.
 This will dramatically improve Docker image layer caching and performance when building, publishing and installing the bundle.
@@ -73,12 +73,12 @@ If you are working with the Porter v1 prerelease, use the new state section:
 ```yaml
 state:
   - name: tfstate
-    path: opentofu/terraform.tfstate
+    path: terraform/terraform.tfstate
   - name: tfvars
-    path: opentofu/terraform.tfvars.json
+    path: terraform/terraform.tfvars.json
 ```
 
-The specified path inside the installer (`/cnab/app/opentofu/terraform.tfstate`) should be where Opentofu/Terraform will be looking to read/write its state.  For a full example bundle using this approach, see the [basic-tf-example](examples/basic-tf-example).
+The specified path inside the installer (`/cnab/app/terraform/terraform.tfstate`) should be where Opentofu/Terraform will be looking to read/write its state.  For a full example bundle using this approach, see the [basic-tf-example](examples/basic-tf-example).
 
 ### Remote Backends
 
@@ -102,7 +102,7 @@ parameters:
   - name: tfvars
     type: file
     # This designates the path within the installer to place the parameter value
-    path: /cnab/app/opentofu/terraform.tfvars.json
+    path: /cnab/app/terraform/terraform.tfvars.json
     # Here we tell Porter that the value for this parameter should come from the 'tfvars' output
     source:
       output: tfvars
@@ -120,7 +120,7 @@ outputs:
   - name: tfvars
     type: file
     # This designates the path within the installer to read the output from
-    path: /cnab/app/opentofu/terraform.tfvars.json
+    path: /cnab/app/terraform/terraform.tfvars.json
     
 install:
   - opentofu:
